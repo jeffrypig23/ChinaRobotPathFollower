@@ -15,7 +15,6 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.PathfinderFRC;
@@ -31,8 +30,6 @@ public class Robot extends TimedRobot {
 	private final double k_max_velocity = 0.9144d; // 36 inches to meters
 	private final String k_path_name = "forward";
 
-	private final MiniPID pid = new MiniPID(0.02d, 4.0E-4d, 0.0d);
-
 	private AHRS m_gyro;
 
 	private EncoderFollower m_left_follower;
@@ -40,14 +37,11 @@ public class Robot extends TimedRobot {
 
 	private Notifier m_follower_notifier;
 
-	private Timer time = new Timer();
-	private double timeLast = 0;
-
 	@Override
 	public void robotInit() {
 		this.robot.leftDrive1.setSelectedSensorPosition(0);
 		this.robot.rightDrive1.setSelectedSensorPosition(0);
-		m_gyro = new AHRS(SPI.Port.kMXP);
+		this.m_gyro = new AHRS(SPI.Port.kMXP);
 	}
 
 	@Override
@@ -70,7 +64,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousInit() {
-		time.start();
 		try {
 
 			Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".left");
@@ -153,27 +146,36 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void disabledPeriodic() {
-
+		// This function is me.
 	}
 
 	private void followPath() {
-		SmartDashboard.putNumber("Time", time.get() - timeLast);
-		timeLast = time.get();
 		if (this.m_left_follower.isFinished() || this.m_right_follower.isFinished()) {
 			this.m_follower_notifier.stop();
+
+			// Stop the motors
 			this.robot.leftDrive1.set(ControlMode.PercentOutput, 0);
 			this.robot.rightDrive1.set(ControlMode.PercentOutput, 0);
 		} else {
+
+			// Calculate the speeds for the left and right side
 			double left_speed = this.m_left_follower.calculate(this.robot.leftDrive1.getSelectedSensorPosition());
 			double right_speed = this.m_right_follower.calculate(this.robot.rightDrive1.getSelectedSensorPosition());
+
+			// Also dislpay the position of the segment for each side
 			SmartDashboard.putNumber("Left position", this.m_left_follower.getSegment().position);
 			SmartDashboard.putNumber("Right position", this.m_right_follower.getSegment().position);
+
+			// Calculate a slight turn if needed
 			double heading = m_gyro.getAngle();
 			double desired_heading = Pathfinder.r2d(m_left_follower.getHeading());
 			double heading_difference = Pathfinder.boundHalfDegrees(desired_heading - heading);
 			double turn = 0.8 * (-1.0 / 80.0) * heading_difference;
+
+			// Apply the resulting power
 			this.robot.leftDrive1.set(ControlMode.PercentOutput, left_speed - turn);
 			this.robot.rightDrive1.set(ControlMode.PercentOutput, right_speed + turn);
+
 		}
 	}
 
