@@ -25,6 +25,9 @@ public class Robot extends TimedRobot {
 
 	private final RobotMap robot = new RobotMap();
 
+	private final double targetTick = 3000;
+	private MiniPID pid;
+
 	private final double k_ticks_per_rev = 1413;
 	private final double k_wheel_diameter = 0.1016d; // 4 inches to meters
 	private final double k_max_velocity = 0.9144d; // 36 inches to meters
@@ -37,11 +40,17 @@ public class Robot extends TimedRobot {
 
 	private Notifier m_follower_notifier;
 
+	public Robot() {
+		super(0.04d);
+	}
+
 	@Override
 	public void robotInit() {
 		this.robot.leftDrive1.setSelectedSensorPosition(0);
 		this.robot.rightDrive1.setSelectedSensorPosition(0);
 		this.m_gyro = new AHRS(SPI.Port.kMXP);
+		this.pid = new MiniPID(0.0001d, 0, 0);
+		this.pid.setOutputLimits(-1.0d, 1.0d);
 	}
 
 	@Override
@@ -49,13 +58,6 @@ public class Robot extends TimedRobot {
 
 		SmartDashboard.putNumber("Left position", this.robot.leftDrive1.getSelectedSensorPosition());
 		SmartDashboard.putNumber("Right position", this.robot.rightDrive1.getSelectedSensorPosition());
-
-		SmartDashboard.putNumber("Left calculate position",
-				((double) this.robot.leftDrive1.getSelectedSensorPosition() / this.k_ticks_per_rev)
-						* this.k_wheel_diameter * Math.PI);
-		SmartDashboard.putNumber("Right calculate position",
-				((double) this.robot.rightDrive1.getSelectedSensorPosition() / this.k_ticks_per_rev)
-						* this.k_wheel_diameter * Math.PI);
 
 		SmartDashboard.putNumber("Left drive power", this.robot.leftDrive1.getMotorOutputPercent());
 		SmartDashboard.putNumber("Right drive power", this.robot.rightDrive1.getMotorOutputPercent());
@@ -65,29 +67,38 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		try {
-
-			Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".left");
-			Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".right");
-
-			this.m_left_follower = new EncoderFollower(left_trajectory);
-			this.m_right_follower = new EncoderFollower(right_trajectory);
-
-			// Be sure that the talons are updating correctly
-			this.robot.leftDrive1.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20);
-			this.robot.rightDrive1.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20);
-
-			m_left_follower.configureEncoder(this.robot.leftDrive1.getSelectedSensorPosition(),
-					(int) this.k_ticks_per_rev, this.k_wheel_diameter);
-			// You must tune the PID values on the following line!
-			m_left_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity, 0);
-
-			m_right_follower.configureEncoder(this.robot.rightDrive1.getSelectedSensorPosition(),
-					(int) this.k_ticks_per_rev, this.k_wheel_diameter);
-			// You must tune the PID values on the following line!
-			m_right_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity, 0);
-
-			this.m_follower_notifier = new Notifier(this::followPath);
-			this.m_follower_notifier.startPeriodic(PathfinderFRC.getTrajectory(k_path_name).get(0).dt);
+			this.robot.leftDrive1.setSelectedSensorPosition(0);
+			this.robot.rightDrive1.setSelectedSensorPosition(0);
+			/*
+			 * Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name +
+			 * ".left"); Trajectory right_trajectory =
+			 * PathfinderFRC.getTrajectory(k_path_name + ".right");
+			 * 
+			 * this.m_left_follower = new EncoderFollower(left_trajectory);
+			 * this.m_right_follower = new EncoderFollower(right_trajectory);
+			 * 
+			 * // Be sure that the talons are updating correctly
+			 * this.robot.leftDrive1.setStatusFramePeriod(StatusFrame.Status_2_Feedback0,
+			 * 20);
+			 * this.robot.rightDrive1.setStatusFramePeriod(StatusFrame.Status_2_Feedback0,
+			 * 20);
+			 * 
+			 * m_left_follower.configureEncoder(this.robot.leftDrive1.
+			 * getSelectedSensorPosition(), (int) this.k_ticks_per_rev,
+			 * this.k_wheel_diameter); // You must tune the PID values on the following
+			 * line! m_left_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity,
+			 * 0);
+			 * 
+			 * m_right_follower.configureEncoder(this.robot.rightDrive1.
+			 * getSelectedSensorPosition(), (int) this.k_ticks_per_rev,
+			 * this.k_wheel_diameter); // You must tune the PID values on the following
+			 * line! m_right_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity,
+			 * 0);
+			 * 
+			 * this.m_follower_notifier = new Notifier(this::followPath);
+			 * this.m_follower_notifier.startPeriodic(PathfinderFRC.getTrajectory(
+			 * k_path_name).get(0).dt);
+			 */
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -97,7 +108,10 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousPeriodic() {
-
+		this.robot.leftDrive1.set(ControlMode.PercentOutput,
+				-this.pid.getOutput(this.robot.leftDrive1.getSelectedSensorPosition(), this.targetTick));
+		this.robot.rightDrive1.set(ControlMode.PercentOutput,
+				-this.pid.getOutput(this.robot.rightDrive1.getSelectedSensorPosition(), this.targetTick));
 	}
 
 	@Override

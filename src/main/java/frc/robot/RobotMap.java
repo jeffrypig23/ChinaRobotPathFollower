@@ -39,8 +39,8 @@ public class RobotMap {
         this.leftDrive1.setInverted(true);
         this.leftDrive2.setInverted(true);
         
-        this.leftDrive1.setSensorPhase(true);
-		this.rightDrive1.setSensorPhase(true);
+        this.leftDrive1.setSensorPhase(false);
+		this.rightDrive1.setSensorPhase(false);
     }
 
 }
