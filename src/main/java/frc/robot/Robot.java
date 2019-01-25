@@ -29,6 +29,8 @@ public class Robot extends TimedRobot {
 	private final double targetTick = 4000;
 	private MiniPID pid;
 
+	private double left_target, right_target;
+
 	private final double k_ticks_per_rev = 1413;
 	private final double k_wheel_diameter = 0.1016d; // 4 inches to meters
 	private final double k_max_velocity = 0.4572; // 18 inches to meters
@@ -128,10 +130,14 @@ public class Robot extends TimedRobot {
 		Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".right");
 
 		// Get the change in position
-		int finalLeftPosition = (int) Math
-				.round(left_trajectory.get(left_trajectory.length() - 1).position - left_trajectory.get(0).position);
+		this.left_target = left_trajectory.get(left_trajectory.length() - 1).position - left_trajectory.get(0).position;
 
-		this.robot.leftDrive.driveToPosition(finalLeftPosition);
+		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
+				- right_trajectory.get(0).position;
+
+		System.out.printf("Left target (inches): %s\nRIght target (inches): %s\n", this.left_target, this.right_target);
+
+		// this.robot.leftDrive.driveToPosition(this.left_target);
 		/*
 		 * this.m_left_follower = new EncoderFollower(left_trajectory);
 		 * this.m_right_follower = new EncoderFollower(right_trajectory);
@@ -163,7 +169,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void testPeriodic() {
-
 	}
 
 	@Override
