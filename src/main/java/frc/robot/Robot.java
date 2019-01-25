@@ -135,7 +135,7 @@ public class Robot extends TimedRobot {
 		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
 				- right_trajectory.get(0).position;
 
-		System.out.printf("Left target (inches): %s\nRIght target (inches): %s\n", this.left_target, this.right_target);
+		System.out.printf("Left target (inches): %s\nRight target (inches): %s\n", this.left_target, this.right_target);
 
 		// this.robot.leftDrive.driveToPosition(this.left_target);
 		/*
@@ -169,6 +169,12 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void testPeriodic() {
+		try {
+			this.robot.leftDrive.driveToPosition(this.left_target);
+			this.robot.rightDrive.driveToPosition(this.right_target);
+		} catch (EncoderError e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

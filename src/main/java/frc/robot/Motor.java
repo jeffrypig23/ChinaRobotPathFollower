@@ -25,24 +25,28 @@ public class Motor extends TalonSRX {
         // One way to reset this is to re-declare the motor, or to zero the encoder
         if (this.driveFirstRun) {
             // https://github.com/CrossTheRoadElec/Phoenix-Examples-Languages/blob/master/Java/MotionMagic/src/main/java/frc/robot/Robot.java
+            /*
             this.configNominalOutputForward(0);
             this.configNominalOutputReverse(0);
             this.configPeakOutputForward(1);
             this.configPeakOutputReverse(-1);
+            */
+            System.out.println("Initial mp setup");
 
-            this.config_kP(0, 0.0001d);
-            this.config_kI(0, 0.0000075d);
-            this.config_kD(0, 0);
-            this.config_kF(0, 0);
+            this.config_kP(0, 0.0001d, 10);
+            this.config_kI(0, 0.0000075d, 10);
+            this.config_kD(0, 0d, 10);
+            this.config_kF(0, 0.0d, 10);
 
-            this.configMotionCruiseVelocity((int) Math.round(18 * this.ticks_per_inch));
-            this.configMotionAcceleration(6000);
+            this.configMotionCruiseVelocity((int) Math.round(18 * this.ticks_per_inch), 10);
+            this.configMotionAcceleration(6000, 10);
 
             this.zeroEncoder();
             this.driveFirstRun = false;
         }
 
         this.set(ControlMode.MotionMagic, this.target);
+        System.out.printf("Current position: %s\nTarget position: %s\nPower: %s\n", this.getPosition(), this.target, this.getMotorOutputPercent());
     }
 
     public boolean targetReached() {
