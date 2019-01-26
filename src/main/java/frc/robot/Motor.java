@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 public class Motor extends TalonSRX {
@@ -16,6 +17,7 @@ public class Motor extends TalonSRX {
         super(port);
     }
 
+    // FIXME
     public void driveToPosition(double position) throws EncoderError {
         this.target = this.ticks_per_inch / position;
 
@@ -25,24 +27,27 @@ public class Motor extends TalonSRX {
         // One way to reset this is to re-declare the motor, or to zero the encoder
         if (this.driveFirstRun) {
             // https://github.com/CrossTheRoadElec/Phoenix-Examples-Languages/blob/master/Java/MotionMagic/src/main/java/frc/robot/Robot.java
-            /*
-            this.configNominalOutputForward(0);
-            this.configNominalOutputReverse(0);
-            this.configPeakOutputForward(1);
-            this.configPeakOutputReverse(-1);
-            */
-            System.out.println("Initial mp setup");
+            
+            this.selectProfileSlot(0, 0);
+            this.configNominalOutputForward(0, 0);
+            this.configNominalOutputReverse(0, 0);
+            this.configPeakOutputForward(1, 0);
+            this.configPeakOutputReverse(-1, 0);
 
             this.config_kP(0, 0.0001d, 10);
             this.config_kI(0, 0.0000075d, 10);
             this.config_kD(0, 0d, 10);
             this.config_kF(0, 0.0d, 10);
 
+            this.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, 0);
+            this.setStatusFramePeriod(StatusFrameEnhanced.Status_10_MotionMagic, 10, 0);
+
             this.configMotionCruiseVelocity((int) Math.round(18 * this.ticks_per_inch), 10);
             this.configMotionAcceleration(6000, 10);
 
             this.zeroEncoder();
             this.driveFirstRun = false;
+            System.out.println("Finished setup");
         }
 
         this.set(ControlMode.MotionMagic, this.target);
@@ -76,7 +81,7 @@ public class Motor extends TalonSRX {
     }
 
     public void zeroEncoder() throws EncoderError {
-        if (!this.setSelectedSensorPosition(0).equals(ErrorCode.OK)) {
+        if (!this.setSelectedSensorPosition(0, 0, 0).equals(ErrorCode.OK)) {
             throw new EncoderError("Cannot zero encoder. Does this motor not have one?");
         } else {
             this.driveFirstRun = true;

@@ -8,9 +8,9 @@ import edu.wpi.first.wpilibj.XboxController;
 public class RobotMap {
 
     // First, start with the ports for the Chicago robot
-    private final int leftDrive1Port = 3, leftDrive2Port = 2, rightDrive1Port = 10, rightDrive2Port = 9,
+    private final int leftDrive1Port = 3, leftDrive2Port = 2, rightDrive1Port = 10, rightDrive2Port = 9/*,
             leftIntakePort = 8, rightIntakePort = 7, liftDrive1Port = 5, liftDrive2Port = 6, liftDrive3Port = 4,
-            wristPort = 11;
+            wristPort = 11*/;
 
     // Now, delcare the drive motors that are on the robot
     public Motor leftDrive, rightDrive;
