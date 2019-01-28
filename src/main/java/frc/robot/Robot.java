@@ -63,46 +63,18 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return;
-		}
-
-		Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".left");
-		Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".right");
-
-		// Get the change in position
-		this.left_target = left_trajectory.get(left_trajectory.length() - 1).position - left_trajectory.get(0).position;
-
-		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
-				- right_trajectory.get(0).position;
-
-		System.out.printf("Left target (inches): %s\nRight target (inches): %s\n", this.left_target, this.right_target);
-		/*
-		try {
-			this.robot.leftDrive.zeroEncoder();
-			this.robot.rightDrive.zeroEncoder();
 		} catch (Motor.EncoderError encoder) {
 			System.err.println("This motor does not have an encoder");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		*/
 
 	}
 
 	@Override
 	public void autonomousPeriodic() {
-		/*
 		this.robot.leftDrive.setPower(-this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
 		this.robot.rightDrive.setPower(-this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
-		*/
-		try {
-			this.robot.leftDrive.driveToPosition(this.left_target);
-			this.robot.rightDrive.driveToPosition(this.right_target);
-		} catch (EncoderError e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -131,14 +103,35 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	}
 
 	@Override
-	public void testInit() {
-		
+	public void testInit() {	
+		try {
+			this.robot.leftDrive.zeroEncoder();
+			this.robot.rightDrive.zeroEncoder();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 
+		Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".left");
+		Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".right");
+
+		// Get the change in position
+		this.left_target = left_trajectory.get(left_trajectory.length() - 1).position - left_trajectory.get(0).position;
+
+		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
+				- right_trajectory.get(0).position;
+
+		System.out.printf("Left target (inches): %s\nRight target (inches): %s\n", this.left_target, this.right_target);
 	}
 
 	@Override
 	public void testPeriodic() {
-		
+		try {
+			this.robot.leftDrive.driveToPosition(this.left_target);
+			this.robot.rightDrive.driveToPosition(this.right_target);
+		} catch (EncoderError e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
