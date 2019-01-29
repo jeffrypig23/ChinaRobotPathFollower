@@ -18,7 +18,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	private final RobotMap robot = new RobotMap();
 
-	private final double targetTick = 4000;
+	private final double targetTick = -4000;
 	private MiniPID pid;
 
 	private double left_target, right_target;
@@ -73,8 +73,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	@Override
 	public void autonomousPeriodic() {
-		this.robot.leftDrive.setPower(-this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
-		this.robot.rightDrive.setPower(-this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
+		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
+		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
 	}
 
 	@Override
@@ -120,8 +120,6 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
 				- right_trajectory.get(0).position;
-
-		System.out.printf("Left target (inches): %s\nRight target (inches): %s\n", this.left_target, this.right_target);
 	}
 
 	@Override

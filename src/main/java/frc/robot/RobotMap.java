@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 import edu.wpi.first.wpilibj.XboxController;
 
@@ -40,7 +41,11 @@ public class RobotMap {
         // Invert necessary drive motors
         this.leftDrive.setInverted(true);
         this.leftDrive2.setInverted(true);
-        
+
+        // Invert the encoders
+        this.leftDrive.setSensorPhase(true);
+        this.rightDrive.setSensorPhase(true);
+
     }
 
 }
