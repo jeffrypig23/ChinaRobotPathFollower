@@ -7,10 +7,13 @@
 
 package frc.robot;
 
+import java.util.ArrayList;
+
 import edu.wpi.first.wpilibj.GenericHID.Hand;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Motor.EncoderError;
+import jaci.pathfinder.PathfinderFRC;
+import jaci.pathfinder.Trajectory;
 
 public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
@@ -19,14 +22,9 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	private final double targetTick = -4000;
 	private MiniPID pid;
 
-	private double left_target, right_target;
+	private int stage = 0;
 
-	// private final double k_ticks_per_rev = 1413;
-	// private final double k_wheel_diameter = 0.1016d; // 4 inches to meters
-	// private final double k_max_velocity = 0.4572; // 18 inches to meters
-	private final String k_path_name = "forward";
-
-	private Notifier m_follower_notifier;
+	private final ArrayList<Trajectory> leftPaths = new ArrayList<>(), rightPaths = new ArrayList<>();
 
 	public Robot() {
 		super(0.04d);
@@ -66,26 +64,45 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			return;
 		}
 
-		// Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name +
-		// ".left");
-		// Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name +
-		// ".right");
+		// Add the forward portion
+		this.leftPaths.add(PathfinderFRC.getTrajectory("Forward.left"));
+		this.rightPaths.add(PathfinderFRC.getTrajectory("Forward.right"));
 
-		// Get the change in position
-		// this.left_target = left_trajectory.get(left_trajectory.length() - 1).position
-		// - left_trajectory.get(0).position;
+		// Add the reverse portion
+		this.leftPaths.add(PathfinderFRC.getTrajectory("Reverse.left"));
+		this.rightPaths.add(PathfinderFRC.getTrajectory("Reverse.right"));
 
-		// this.right_target = right_trajectory.get(right_trajectory.length() -
-		// 1).position - right_trajectory.get(0).position;
-		this.left_target = 112;
-		this.right_target = 112;
+		this.stage = 0;
 	}
 
 	@Override
 	public void autonomousPeriodic() {
 		try {
-			this.robot.leftDrive.driveToPosition(this.left_target);
-			this.robot.rightDrive.driveToPosition(this.right_target);
+
+			// Check if were still running off of stages
+			if (stage < this.leftPaths.size() && this.stage < this.rightPaths.size()) {
+
+				// Calculate the left and right targets
+				double leftTarget = this.leftPaths.get(stage).get(this.leftPaths.get(stage).length() - 1).position
+						- this.leftPaths.get(stage).get(0).position;
+
+				double rightTarget = this.rightPaths.get(stage).get(this.rightPaths.get(stage).length() - 1).position
+						- this.rightPaths.get(stage).get(0).position;
+
+				// Set it to run to those targeted positions
+				this.robot.leftDrive.driveToPosition(leftTarget);
+				this.robot.rightDrive.driveToPosition(rightTarget);
+
+				// Check if the target has been reacked (within a certain descrepancy)
+				if (this.robot.leftDrive.targetReached(50) && this.robot.rightDrive.targetReached(50)) {
+					System.out.println("Done!");
+					this.stage++;
+				}
+
+			} else {
+				this.robot.leftDrive.stop();
+				this.robot.rightDrive.stop();
+			}
 
 			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getClosedLoopTarget());
 			SmartDashboard.putNumber("Left target", this.robot.leftDrive.getClosedLoopTarget());
@@ -144,9 +161,6 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	@Override
 	public void disabledInit() {
-		if (this.m_follower_notifier != null) {
-			this.m_follower_notifier.stop();
-		}
 		this.robot.leftDrive.stop();
 		this.robot.rightDrive.stop();
 	}
