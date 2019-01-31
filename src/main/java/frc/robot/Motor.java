@@ -8,7 +8,7 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
     /**
      * How many ticks there are in one inch
      */
-    private final double ticks_per_inch = 353.25d * Math.PI;
+    private final double ticks_per_inch = 107d;
 
     /**
      * Boolean used to make sure that the setup in <code>driveToPosition</code> only
@@ -30,9 +30,8 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
         super(port);
     }
 
-    // FIXME
     public void driveToPosition(double position) throws EncoderError {
-        this.target = -(this.ticks_per_inch / position);
+        this.target = -(this.ticks_per_inch * position);
 
         // Only run this once to set up the talon stuff.
         // While zeroEncoder() resets the driveFristRun variable to true, we reset it at
@@ -50,9 +49,11 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
             this.configPeakOutputForward(1);
             this.configPeakOutputReverse(-1);
 
-            this.config_kP(0, 0.0001);
-            this.config_kI(0, 0.0000075d);
-            this.config_kD(0, 0d);
+            // TODO: Tune this
+            this.config_kP(0, 0.1d);
+            this.config_IntegralZone(0, 600);
+            this.config_kI(0, 0.0001d);
+            this.config_kD(0, 0.0d);
             this.config_kF(0, 0.0d);
 
             this.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, 0);

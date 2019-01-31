@@ -11,8 +11,6 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Motor.EncoderError;
-import jaci.pathfinder.PathfinderFRC;
-import jaci.pathfinder.Trajectory;
 
 public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
@@ -63,18 +61,42 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
-		} catch (Motor.EncoderError encoder) {
-			System.err.println("This motor does not have an encoder");
 		} catch (Exception e) {
 			e.printStackTrace();
+			return;
 		}
 
+		// Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name +
+		// ".left");
+		// Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name +
+		// ".right");
+
+		// Get the change in position
+		// this.left_target = left_trajectory.get(left_trajectory.length() - 1).position
+		// - left_trajectory.get(0).position;
+
+		// this.right_target = right_trajectory.get(right_trajectory.length() -
+		// 1).position - right_trajectory.get(0).position;
+		this.left_target = 112;
+		this.right_target = 112;
 	}
 
 	@Override
 	public void autonomousPeriodic() {
-		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
-		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
+		try {
+			this.robot.leftDrive.driveToPosition(this.left_target);
+			this.robot.rightDrive.driveToPosition(this.right_target);
+
+			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getClosedLoopTarget());
+			SmartDashboard.putNumber("Left target", this.robot.leftDrive.getClosedLoopTarget());
+
+			SmartDashboard.putNumber("Right displacement",
+					Math.abs(this.robot.rightDrive.getClosedLoopTarget() - this.robot.rightDrive.getPosition()));
+			SmartDashboard.putNumber("Left displacement",
+					Math.abs(this.robot.leftDrive.getClosedLoopTarget() - this.robot.leftDrive.getPosition()));
+		} catch (EncoderError e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -103,33 +125,21 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	}
 
 	@Override
-	public void testInit() {	
+	public void testInit() {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
+		} catch (Motor.EncoderError encoder) {
+			System.err.println("This motor does not have an encoder");
 		} catch (Exception e) {
 			e.printStackTrace();
-			return;
 		}
-
-		Trajectory left_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".left");
-		Trajectory right_trajectory = PathfinderFRC.getTrajectory(k_path_name + ".right");
-
-		// Get the change in position
-		this.left_target = left_trajectory.get(left_trajectory.length() - 1).position - left_trajectory.get(0).position;
-
-		this.right_target = right_trajectory.get(right_trajectory.length() - 1).position
-				- right_trajectory.get(0).position;
 	}
 
 	@Override
 	public void testPeriodic() {
-		try {
-			this.robot.leftDrive.driveToPosition(this.left_target);
-			this.robot.rightDrive.driveToPosition(this.right_target);
-		} catch (EncoderError e) {
-			e.printStackTrace();
-		}
+		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
+		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
 	}
 
 	@Override
