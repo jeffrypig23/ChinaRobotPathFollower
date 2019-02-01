@@ -8,10 +8,14 @@
 package frc.robot;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Motor.EncoderError;
+import frc.robot.autonomousOptions.autonomous;
 import jaci.pathfinder.PathfinderFRC;
 import jaci.pathfinder.Trajectory;
 
@@ -24,7 +28,17 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	private int stage = 0;
 
+	private final Calendar time = Calendar.getInstance();
+
+	private Date checkTime;
+
+	private boolean trackVelocity = false;
+
+	private double initialVelocityPosition = 0.0;
+
 	private final ArrayList<Trajectory> leftPaths = new ArrayList<>(), rightPaths = new ArrayList<>();
+
+	private final SendableChooser<autonomous> autoChooser = new SendableChooser<>();
 
 	public Robot() {
 		super(0.04d);
@@ -35,6 +49,10 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
+
+			this.autoChooser.setDefaultOption("PID", autonomous.PID);
+			this.autoChooser.addOption("MP off path", autonomous.MP);
+
 		} catch (EncoderError e) {
 			e.printStackTrace();
 		}
@@ -59,15 +77,27 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
+
+			// Get the option which was chosen from the sendable chooser
+			switch (this.autoChooser.getSelected()) {
+			case MP:
+				// Add the forward and reverse portions
+				this.addPath("Forward", "turn", "Forward");
+
+				this.stage = 0;
+				break;
+			case PID:
+				// Do nothing
+				break;
+			case OTHER:
+				// Do nothing
+				break;
+
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
 		}
-
-		// Add the forward and reverse portions
-		this.addPath("Forward", "turn", "Forward");
-
-		this.stage = 0;
 	}
 
 	private void addPath(String... names) {
@@ -82,24 +112,15 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	public void autonomousPeriodic() {
 		try {
 
-			// Check if were still running off of stages
-			if (stage < this.leftPaths.size() && this.stage < this.rightPaths.size()) {
-
-				// Set it to run to those targeted positions
-				this.robot.leftDrive.driveToPosition(this.getTargetPosition(this.leftPaths.get(stage)));
-				this.robot.rightDrive.driveToPosition(this.getTargetPosition(this.rightPaths.get(stage)));
-
-				// Check if the target has been reacked (within a certain descrepancy)
-				if (this.robot.leftDrive.targetReached(107) && this.robot.rightDrive.targetReached(107)) {
-					System.out.println("Done!");
-					this.robot.leftDrive.zeroEncoder();
-					this.robot.rightDrive.zeroEncoder();
-					this.stage++;
-				}
-
-			} else {
-				this.robot.leftDrive.stop();
-				this.robot.rightDrive.stop();
+			switch (this.autoChooser.getSelected()) {
+			case MP:
+				this.motionProfileAuto();
+				break;
+			case PID:
+				this.pidAuto();
+				break;
+			case OTHER:
+				break;
 			}
 
 			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getTarget());
@@ -113,6 +134,32 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		} catch (EncoderError e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void motionProfileAuto() throws EncoderError {
+		if (stage < this.leftPaths.size() && this.stage < this.rightPaths.size()) {
+
+			// Set it to run to those targeted positions
+			this.robot.leftDrive.driveToPosition(this.getTargetPosition(this.leftPaths.get(stage)));
+			this.robot.rightDrive.driveToPosition(this.getTargetPosition(this.rightPaths.get(stage)));
+
+			// Check if the target has been reacked (within a certain descrepancy)
+			if (this.robot.leftDrive.targetReached(107) && this.robot.rightDrive.targetReached(107)) {
+				System.out.println("Done!");
+				this.robot.leftDrive.zeroEncoder();
+				this.robot.rightDrive.zeroEncoder();
+				this.stage++;
+			}
+
+		} else {
+			this.robot.leftDrive.stop();
+			this.robot.rightDrive.stop();
+		}
+	}
+
+	private void pidAuto() {
+		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
+		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
 	}
 
 	private double getTargetPosition(Trajectory trajectory) {
@@ -152,24 +199,41 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			this.robot.rightDrive.stop();
 		}
 
+		// Check if we are tracking velocity
+		if (this.trackVelocity) {
+			// Check if one second has elapsed
+			if (this.time.getTime().after(this.checkTime)) {
+				System.out.println(
+						"Current velocity: " + (this.robot.leftDrive.getPosition() - this.initialVelocityPosition));
+				this.trackVelocity = false;
+			}
+		} else {
+			// Check if we want to start tracking velocity
+			if (this.robot.gamepad1.getBumperPressed(Hand.kLeft) || this.robot.gamepad1.getBumperPressed(Hand.kRight)) {
+
+				// Set the initial position
+				this.initialVelocityPosition = this.robot.leftDrive.getPosition();
+
+				// Set the check time
+				this.time.add(Calendar.SECOND, 1);
+				this.checkTime = this.time.getTime();
+
+				// Reset the time
+				this.time.add(Calendar.SECOND, -1);
+
+				System.out.println("Tracking velocity...");
+				this.trackVelocity = true;
+			}
+		}
+
 	}
 
 	@Override
 	public void testInit() {
-		try {
-			this.robot.leftDrive.zeroEncoder();
-			this.robot.rightDrive.zeroEncoder();
-		} catch (Motor.EncoderError encoder) {
-			System.err.println("This motor does not have an encoder");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
 	public void testPeriodic() {
-		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
-		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
 	}
 
 	@Override
