@@ -51,8 +51,8 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
 
             // TODO: Tune this
             this.config_kP(0, 0.1d);
-            this.config_IntegralZone(0, 600);
-            this.config_kI(0, 0.0001d);
+            this.config_IntegralZone(0, 700);
+            this.config_kI(0, 0.00025d);
             this.config_kD(0, 0.0d);
             this.config_kF(0, 0.0d);
 
@@ -124,6 +124,10 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
             this.driveFirstRun = true;
             return;
         }
+    }
+
+    public double getTarget() {
+        return this.target;
     }
 
     public class EncoderError extends Exception {

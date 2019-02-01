@@ -64,15 +64,17 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			return;
 		}
 
-		// Add the forward portion
-		this.leftPaths.add(PathfinderFRC.getTrajectory("Forward.left"));
-		this.rightPaths.add(PathfinderFRC.getTrajectory("Forward.right"));
-
-		// Add the reverse portion
-		this.leftPaths.add(PathfinderFRC.getTrajectory("Reverse.left"));
-		this.rightPaths.add(PathfinderFRC.getTrajectory("Reverse.right"));
+		// Add the forward and reverse portions
+		this.addPath("Forward", "turn");
 
 		this.stage = 0;
+	}
+
+	private void addPath(String... names) {
+		for (String name : names) {
+			this.leftPaths.add(PathfinderFRC.getTrajectory(name + ".left"));
+			this.rightPaths.add(PathfinderFRC.getTrajectory(name + ".right"));
+		}
 	}
 
 	@Override
@@ -82,20 +84,15 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			// Check if were still running off of stages
 			if (stage < this.leftPaths.size() && this.stage < this.rightPaths.size()) {
 
-				// Calculate the left and right targets
-				double leftTarget = this.leftPaths.get(stage).get(this.leftPaths.get(stage).length() - 1).position
-						- this.leftPaths.get(stage).get(0).position;
-
-				double rightTarget = this.rightPaths.get(stage).get(this.rightPaths.get(stage).length() - 1).position
-						- this.rightPaths.get(stage).get(0).position;
-
 				// Set it to run to those targeted positions
-				this.robot.leftDrive.driveToPosition(leftTarget);
-				this.robot.rightDrive.driveToPosition(rightTarget);
+				this.robot.leftDrive.driveToPosition(this.getTargetPosition(this.leftPaths.get(stage)));
+				this.robot.rightDrive.driveToPosition(this.getTargetPosition(this.rightPaths.get(stage)));
 
 				// Check if the target has been reacked (within a certain descrepancy)
 				if (this.robot.leftDrive.targetReached(50) && this.robot.rightDrive.targetReached(50)) {
 					System.out.println("Done!");
+					this.robot.leftDrive.zeroEncoder();
+					this.robot.rightDrive.zeroEncoder();
 					this.stage++;
 				}
 
@@ -104,16 +101,31 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				this.robot.rightDrive.stop();
 			}
 
-			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getClosedLoopTarget());
-			SmartDashboard.putNumber("Left target", this.robot.leftDrive.getClosedLoopTarget());
+			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getTarget());
+			SmartDashboard.putNumber("Left target", this.robot.leftDrive.getTarget());
 
 			SmartDashboard.putNumber("Right displacement",
-					Math.abs(this.robot.rightDrive.getClosedLoopTarget() - this.robot.rightDrive.getPosition()));
+					Math.abs(this.robot.rightDrive.getTarget() - this.robot.rightDrive.getPosition()));
 			SmartDashboard.putNumber("Left displacement",
-					Math.abs(this.robot.leftDrive.getClosedLoopTarget() - this.robot.leftDrive.getPosition()));
+					Math.abs(this.robot.leftDrive.getTarget() - this.robot.leftDrive.getPosition()));
+			SmartDashboard.putNumber("Stage", stage);
 		} catch (EncoderError e) {
 			e.printStackTrace();
 		}
+	}
+
+	private double getTargetPosition(Trajectory trajectory) {
+		// Calculate the left and right targets
+		final int last = trajectory.length() - 1;
+		double target = trajectory.get(last).position - trajectory.get(0).position;
+
+		// Determine if its forward or backward
+		double score = (trajectory.get(last).x - trajectory.get(0).x) + (trajectory.get(last).y - trajectory.get(0).y);
+		if (score < 0) {
+			target *= -1;
+		}
+
+		return target;
 	}
 
 	@Override
