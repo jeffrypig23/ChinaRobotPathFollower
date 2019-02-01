@@ -8,8 +8,6 @@
 package frc.robot;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -28,9 +26,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	private int stage = 0;
 
-	private final Calendar time = Calendar.getInstance();
-
-	private Date checkTime;
+	private long initialTime;
 
 	private boolean trackVelocity = false;
 
@@ -52,6 +48,9 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 			this.autoChooser.setDefaultOption("PID", autonomous.PID);
 			this.autoChooser.addOption("MP off path", autonomous.MP);
+			this.autoChooser.addOption("Pathfollower", autonomous.PATH);
+
+			SmartDashboard.putData(this.autoChooser);
 
 		} catch (EncoderError e) {
 			e.printStackTrace();
@@ -89,6 +88,9 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			case PID:
 				// Do nothing
 				break;
+			case PATH:
+				new PathFollower("Test", this.robot).initPathFollower();
+				break;
 			case OTHER:
 				// Do nothing
 				break;
@@ -118,6 +120,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				break;
 			case PID:
 				this.pidAuto();
+				break;
+			case PATH:
 				break;
 			case OTHER:
 				break;
@@ -202,7 +206,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		// Check if we are tracking velocity
 		if (this.trackVelocity) {
 			// Check if one second has elapsed
-			if (this.time.getTime().after(this.checkTime)) {
+			if (System.currentTimeMillis() >= initialTime + 1000) {
 				System.out.println(
 						"Current velocity: " + (this.robot.leftDrive.getPosition() - this.initialVelocityPosition));
 				this.trackVelocity = false;
@@ -215,11 +219,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				this.initialVelocityPosition = this.robot.leftDrive.getPosition();
 
 				// Set the check time
-				this.time.add(Calendar.SECOND, 1);
-				this.checkTime = this.time.getTime();
-
-				// Reset the time
-				this.time.add(Calendar.SECOND, -1);
+				this.initialTime = System.currentTimeMillis();
 
 				System.out.println("Tracking velocity...");
 				this.trackVelocity = true;
