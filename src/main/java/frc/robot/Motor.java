@@ -50,9 +50,9 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
             this.configPeakOutputReverse(-1);
 
             // TODO: Tune this
-            this.config_kP(0, 0.1d);
-            this.config_IntegralZone(0, 700);
-            this.config_kI(0, 0.00025d);
+            this.config_kP(0, 0.15d);
+            this.config_IntegralZone(0, 900);
+            this.config_kI(0, 0.0003d);
             this.config_kD(0, 0.0d);
             this.config_kF(0, 0.0d);
 

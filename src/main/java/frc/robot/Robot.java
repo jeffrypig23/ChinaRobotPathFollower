@@ -65,15 +65,16 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		}
 
 		// Add the forward and reverse portions
-		this.addPath("Forward", "turn");
+		this.addPath("Forward", "turn", "Forward");
 
 		this.stage = 0;
 	}
 
 	private void addPath(String... names) {
 		for (String name : names) {
-			this.leftPaths.add(PathfinderFRC.getTrajectory(name + ".left"));
-			this.rightPaths.add(PathfinderFRC.getTrajectory(name + ".right"));
+			// Becasue the drive wheels are inverted, we also have to invert the sides
+			this.leftPaths.add(PathfinderFRC.getTrajectory(name + ".right"));
+			this.rightPaths.add(PathfinderFRC.getTrajectory(name + ".left"));
 		}
 	}
 
@@ -89,7 +90,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				this.robot.rightDrive.driveToPosition(this.getTargetPosition(this.rightPaths.get(stage)));
 
 				// Check if the target has been reacked (within a certain descrepancy)
-				if (this.robot.leftDrive.targetReached(50) && this.robot.rightDrive.targetReached(50)) {
+				if (this.robot.leftDrive.targetReached(107) && this.robot.rightDrive.targetReached(107)) {
 					System.out.println("Done!");
 					this.robot.leftDrive.zeroEncoder();
 					this.robot.rightDrive.zeroEncoder();
@@ -175,6 +176,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	public void disabledInit() {
 		this.robot.leftDrive.stop();
 		this.robot.rightDrive.stop();
+		this.rightPaths.clear();
+		this.leftPaths.clear();
 	}
 
 	@Override
