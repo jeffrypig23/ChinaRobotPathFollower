@@ -30,6 +30,7 @@ public class Motor extends com.ctre.phoenix.motorcontrol.can.TalonSRX {
         super(port);
     }
 
+    @Deprecated
     public void driveToPosition(double position) throws EncoderError {
         this.target = -(this.ticks_per_inch * position);
 

@@ -7,36 +7,25 @@
 
 package frc.robot;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import edu.wpi.first.wpilibj.GenericHID.Hand;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Motor.EncoderError;
-import frc.robot.autonomousOptions.autonomous;
-import jaci.pathfinder.PathfinderFRC;
-import jaci.pathfinder.Trajectory;
 
 public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	private final RobotMap robot = new RobotMap();
 
-	private final double targetTick = -4000;
-	private MiniPID pid;
-
-	private int stage = 0;
-
+	// Variables for tracking velocity
 	private long initialTime;
-
 	private boolean trackVelocity = false;
-
 	private double initialVelocityPosition = 0.0;
 
-	private final ArrayList<Trajectory> leftPaths = new ArrayList<>(), rightPaths = new ArrayList<>();
-
-	private final SendableChooser<autonomous> autoChooser = new SendableChooser<>();
-
+	// Variables for following a set path
 	private PathFollower follower;
+	private Queue<String[]> paths = new LinkedList<>();
 
 	public Robot() {
 		super(0.04d);
@@ -47,70 +36,39 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		try {
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
-
-			this.autoChooser.setDefaultOption("PID", autonomous.PID);
-			this.autoChooser.addOption("MP off path", autonomous.MP);
-			this.autoChooser.addOption("Pathfollower", autonomous.PATH);
-
-			SmartDashboard.putData(this.autoChooser);
-
 		} catch (EncoderError e) {
 			e.printStackTrace();
 		}
-
-		this.pid = new MiniPID(0.0001d, 0.0000075d, 0);
-		this.pid.setOutputLimits(-1.0d, 1.0d);
 	}
 
 	@Override
 	public void robotPeriodic() {
-
 		SmartDashboard.putNumber("Left position", this.robot.leftDrive.getPosition());
 		SmartDashboard.putNumber("Right position", this.robot.rightDrive.getPosition());
-
 		SmartDashboard.putNumber("Left drive power", this.robot.leftDrive.getMotorOutputPercent());
 		SmartDashboard.putNumber("Right drive power", this.robot.rightDrive.getMotorOutputPercent());
-
 		SmartDashboard.putNumber("Heading", this.robot.navX.getFusedHeading());
 	}
 
 	@Override
 	public void autonomousInit() {
 		try {
+			// Reset the encoders
 			this.robot.leftDrive.zeroEncoder();
 			this.robot.rightDrive.zeroEncoder();
 
-			// Get the option which was chosen from the sendable chooser
-			switch (this.autoChooser.getSelected()) {
-			case MP:
-				// Add the forward and reverse portions
-				this.addPath("Forward", "turn", "Forward");
+			// Load the paths into a queue
+			this.paths.add(new String[] { "one", "true" });
+			this.paths.add(new String[] { "two", "false" });
+			this.paths.add(new String[] { "one", "true" });
+			this.paths.add(new String[] { "two", "false" });
 
-				this.stage = 0;
-				break;
-			case PID:
-				// Do nothing
-				break;
-			case PATH:
-				this.follower = new PathFollower(this.robot);
-				this.stage = 0;
-				break;
-			case OTHER:
-				// Do nothing
-				break;
-
-			}
+			// Setup load the first path to drive to
+			String[] path = this.paths.poll();
+			this.follower.loadPath(path[0], Boolean.parseBoolean(path[1]));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
-		}
-	}
-
-	private void addPath(String... names) {
-		for (String name : names) {
-			// Becasue the drive wheels are inverted, we also have to invert the sides
-			this.leftPaths.add(PathfinderFRC.getTrajectory(name + ".right"));
-			this.rightPaths.add(PathfinderFRC.getTrajectory(name + ".left"));
 		}
 	}
 
@@ -118,112 +76,48 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	public void autonomousPeriodic() {
 		try {
 
-			switch (this.autoChooser.getSelected()) {
-			case MP:
-				this.motionProfileAuto();
-				break;
-			case PID:
-				this.pidAuto();
-				break;
-			case PATH:
-				switch (stage) {
-				case 0:
-					// Go the the frst path (one), then wait for completion
-					this.robot.leftDrive.zeroEncoder();
-					this.robot.rightDrive.zeroEncoder();
-					this.follower.initPathFollower("one", true);
-					stage++;
-					break;
-				case 1:
-					// Check if the stage has completed, then start the next one
-					if (this.follower.pathFinished) {
-						this.robot.leftDrive.zeroEncoder();
-						this.robot.rightDrive.zeroEncoder();
-						this.follower.initPathFollower("two", false);
-						stage++;
+			if (this.follower != null) {
+				if (this.follower.leftFollower != null && this.follower.rightFollower != null) {
+					// Check if the path has been completed
+					if (this.follower.leftFollower.isFinished() && this.follower.rightFollower.isFinished()) {
+						// Stop motors and load the next path
+						this.robot.leftDrive.stop();
+						this.robot.rightDrive.stop();
+						if (this.paths.size() > 0) {
+							String[] path = this.paths.poll();
+							this.follower.loadPath(path[0], Boolean.parseBoolean(path[1]));
+						}
+					} else {
+						// Drive based on the path
+						double left_speed = this.follower.leftFollower
+								.calculate(this.robot.leftDrive.getSelectedSensorPosition());
+						double right_speed = this.follower.rightFollower
+								.calculate(this.robot.rightDrive.getSelectedSensorPosition());
+						this.robot.leftDrive.setPower(left_speed);
+						this.robot.rightDrive.setPower(right_speed);
 					}
-					break;
-				case 2:
-					// Check if the stage has completed, then start the next one
-					if (this.follower.pathFinished) {
-						this.robot.leftDrive.zeroEncoder();
-						this.robot.rightDrive.zeroEncoder();
-						this.follower.initPathFollower("one", true);
-						stage++;
-					}
-					break;
-				case 3:
-					// Check if the stage has completed, then start the next one
-					if (this.follower.pathFinished) {
-						this.robot.leftDrive.zeroEncoder();
-						this.robot.rightDrive.zeroEncoder();
-						this.follower.initPathFollower("two", false);
-						stage++;
-					}
-					break;
-				case 4:
-					if (this.follower.pathFinished) {
-						System.out.println("Go to next path");
-						stage++;
-					}
-					break;
 				}
-				break;
-			case OTHER:
-				break;
+			} else {
+				// Something is wrong, so stop.
+				this.robot.leftDrive.stop();
+				this.robot.rightDrive.stop();
 			}
 
-			SmartDashboard.putNumber("Right target", this.robot.rightDrive.getTarget());
-			SmartDashboard.putNumber("Left target", this.robot.leftDrive.getTarget());
+			// Update telemetry
+			this.updateAutonomousTelemetry();
 
-			SmartDashboard.putNumber("Right displacement",
-					Math.abs(this.robot.rightDrive.getTarget() - this.robot.rightDrive.getPosition()));
-			SmartDashboard.putNumber("Left displacement",
-					Math.abs(this.robot.leftDrive.getTarget() - this.robot.leftDrive.getPosition()));
-			SmartDashboard.putNumber("Stage", stage);
-		} catch (EncoderError e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void motionProfileAuto() throws EncoderError {
-		if (stage < this.leftPaths.size() && this.stage < this.rightPaths.size()) {
-
-			// Set it to run to those targeted positions
-			this.robot.leftDrive.driveToPosition(this.getTargetPosition(this.leftPaths.get(stage)));
-			this.robot.rightDrive.driveToPosition(this.getTargetPosition(this.rightPaths.get(stage)));
-
-			// Check if the target has been reacked (within a certain descrepancy)
-			if (this.robot.leftDrive.targetReached(107) && this.robot.rightDrive.targetReached(107)) {
-				System.out.println("Done!");
-				this.robot.leftDrive.zeroEncoder();
-				this.robot.rightDrive.zeroEncoder();
-				this.stage++;
-			}
-
-		} else {
-			this.robot.leftDrive.stop();
-			this.robot.rightDrive.stop();
-		}
-	}
-
-	private void pidAuto() {
-		this.robot.leftDrive.setPower(this.pid.getOutput(this.robot.leftDrive.getPosition(), this.targetTick));
-		this.robot.rightDrive.setPower(this.pid.getOutput(this.robot.rightDrive.getPosition(), this.targetTick));
-	}
-
-	private double getTargetPosition(Trajectory trajectory) {
-		// Calculate the left and right targets
-		final int last = trajectory.length() - 1;
-		double target = trajectory.get(last).position - trajectory.get(0).position;
-
-		// Determine if its forward or backward
-		double score = (trajectory.get(last).x - trajectory.get(0).x) + (trajectory.get(last).y - trajectory.get(0).y);
-		if (score < 0) {
-			target *= -1;
-		}
-
-		return target;
+	private void updateAutonomousTelemetry() {
+		SmartDashboard.putNumber("Right target", this.follower.rightFollower.getSegment().position);
+		SmartDashboard.putNumber("Left target", this.follower.leftFollower.getSegment().position);
+		SmartDashboard.putNumber("Right displacement",
+				Math.abs(this.follower.rightFollower.getSegment().position - this.robot.rightDrive.getPosition()));
+		SmartDashboard.putNumber("Left displacement",
+				Math.abs(this.follower.rightFollower.getSegment().position - this.robot.leftDrive.getPosition()));
 	}
 
 	@Override
@@ -286,13 +180,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	public void disabledInit() {
 		this.robot.leftDrive.stop();
 		this.robot.rightDrive.stop();
-		this.rightPaths.clear();
-		this.leftPaths.clear();
-		if (this.follower != null) {
-			if (this.follower.m_follower_notifier != null) {
-				this.follower.m_follower_notifier.stop();
-			}
-		}
+		this.paths.clear();
 	}
 
 	@Override
