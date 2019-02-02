@@ -36,6 +36,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 
 	private final SendableChooser<autonomous> autoChooser = new SendableChooser<>();
 
+	private PathFollower follower;
+
 	public Robot() {
 		super(0.04d);
 	}
@@ -89,7 +91,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				// Do nothing
 				break;
 			case PATH:
-				new PathFollower("Test", this.robot).initPathFollower();
+				this.follower = new PathFollower("Test", this.robot);
+				this.follower.initPathFollower();
 				break;
 			case OTHER:
 				// Do nothing
@@ -242,6 +245,11 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		this.robot.rightDrive.stop();
 		this.rightPaths.clear();
 		this.leftPaths.clear();
+		if (this.follower != null) {
+			if (this.follower.m_follower_notifier != null) {
+				this.follower.m_follower_notifier.stop();
+			}
+		}
 	}
 
 	@Override

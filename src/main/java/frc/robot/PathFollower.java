@@ -1,5 +1,7 @@
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
+
 import edu.wpi.first.wpilibj.Notifier;
 import jaci.pathfinder.PathfinderFRC;
 import jaci.pathfinder.Trajectory;
@@ -16,13 +18,13 @@ public class PathFollower {
 
 	// FIXME
 	private final int k_ticks_per_rev = 1240;
-	private final double k_wheel_diameter = 4 * 0.0254d; // This is in meters
-	private final double k_max_velocity = 215 * 0.0254; // This is in meters
+	private final double k_wheel_diameter = 4;
+	private final double k_max_velocity = 215;
 
 	private EncoderFollower m_left_follower;
 	private EncoderFollower m_right_follower;
 
-	private Notifier m_follower_notifier;
+	public Notifier m_follower_notifier;
 
 	private String name;
 	private RobotMap robot;
@@ -41,15 +43,18 @@ public class PathFollower {
 		this.m_left_follower = new EncoderFollower(left_trajectory);
 		this.m_right_follower = new EncoderFollower(right_trajectory);
 
-		this.m_left_follower.configureEncoder((int) this.robot.leftDrive.getPosition(), this.k_ticks_per_rev,
+		this.m_left_follower.configureEncoder(0, this.k_ticks_per_rev,
 				this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
-		this.m_left_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+		this.m_left_follower.configurePIDVA(0.08, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 
-		this.m_right_follower.configureEncoder((int) this.robot.leftDrive.getPosition(), this.k_ticks_per_rev,
+		this.m_right_follower.configureEncoder(0, this.k_ticks_per_rev,
 				this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
-		this.m_right_follower.configurePIDVA(1.0, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+		this.m_right_follower.configurePIDVA(0.001, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+
+		this.robot.leftDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
+		this.robot.rightDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
 
 		this.m_follower_notifier = new Notifier(this::followPath);
 		this.m_follower_notifier.startPeriodic(left_trajectory.get(0).dt);
@@ -58,9 +63,23 @@ public class PathFollower {
 	private void followPath() {
 		if (m_left_follower.isFinished() || m_right_follower.isFinished()) {
 			m_follower_notifier.stop();
+			this.robot.leftDrive.stop();
+			this.robot.rightDrive.stop();
 		} else {
-			double left_speed = m_left_follower.calculate((int) Math.round(this.robot.leftDrive.getPosition())); // Remember, this needs to be inverted
-			double right_speed = m_right_follower.calculate((int) Math.round(this.robot.leftDrive.getPosition())); // Remember, this needs to be inverted
+			/*
+			double leftInches = ((double) (this.robot.leftDrive.getSelectedSensorPosition()) / this.k_ticks_per_rev)
+					* Math.PI * this.k_wheel_diameter;
+			System.out.println(String.format("%s L-> %s", leftInches, this.m_left_follower.getSegment().position));
+			*/
+			
+			double rightInches = ((double) (this.robot.rightDrive.getSelectedSensorPosition()) / this.k_ticks_per_rev)
+					* Math.PI * this.k_wheel_diameter;
+			System.out.println(String.format("%s R-> %s", rightInches, this.m_right_follower.getSegment().position));
+			
+
+			// Remember, this needs to be inverted
+			double left_speed = m_left_follower.calculate(this.robot.leftDrive.getSelectedSensorPosition());
+			double right_speed = m_right_follower.calculate(this.robot.rightDrive.getSelectedSensorPosition());
 			this.robot.leftDrive.setPower(left_speed);
 			this.robot.rightDrive.setPower(right_speed);
 		}
