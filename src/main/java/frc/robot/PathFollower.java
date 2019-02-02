@@ -51,7 +51,7 @@ public class PathFollower {
 		this.m_right_follower.configureEncoder(0, this.k_ticks_per_rev,
 				this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
-		this.m_right_follower.configurePIDVA(0.001, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+		this.m_right_follower.configurePIDVA(0.08, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 
 		this.robot.leftDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
 		this.robot.rightDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
