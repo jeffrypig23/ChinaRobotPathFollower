@@ -10,6 +10,7 @@ import jaci.pathfinder.followers.EncoderFollower;
 public class PathFollower {
 
 	// Max velocity in ticks is 23000 ticks per second
+	// Which is 21800 under load
 	// Which is ~215 inches per second
 
 	// Acceleration is 78.72 inche per second per second
@@ -19,7 +20,7 @@ public class PathFollower {
 	// FIXME
 	private final int k_ticks_per_rev = 1240;
 	private final double k_wheel_diameter = 4;
-	private final double k_max_velocity = 215;
+	private final double k_max_velocity = 203.7383177570093d;
 
 	private EncoderFollower m_left_follower;
 	private EncoderFollower m_right_follower;
