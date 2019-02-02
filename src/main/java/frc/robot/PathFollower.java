@@ -3,6 +3,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 
 import edu.wpi.first.wpilibj.Notifier;
+import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.PathfinderFRC;
 import jaci.pathfinder.Trajectory;
 import jaci.pathfinder.followers.EncoderFollower;
@@ -47,12 +48,12 @@ public class PathFollower {
 		this.m_left_follower.configureEncoder(0, this.k_ticks_per_rev,
 				this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
-		this.m_left_follower.configurePIDVA(0.08, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+		this.m_left_follower.configurePIDVA(0.075, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 
 		this.m_right_follower.configureEncoder(0, this.k_ticks_per_rev,
 				this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
-		this.m_right_follower.configurePIDVA(0.08, 0.0, 0.0, 1 / this.k_max_velocity, 0);
+		this.m_right_follower.configurePIDVA(0.075, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 
 		this.robot.leftDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
 		this.robot.rightDrive.setStatusFramePeriod(StatusFrameEnhanced.Status_3_Quadrature, 40);
@@ -62,25 +63,31 @@ public class PathFollower {
 	}
 
 	private void followPath() {
-		if (m_left_follower.isFinished() || m_right_follower.isFinished()) {
-			m_follower_notifier.stop();
+		if (this.m_left_follower.isFinished() || this.m_right_follower.isFinished()) {
+			this.m_follower_notifier.stop();
 			this.robot.leftDrive.stop();
 			this.robot.rightDrive.stop();
 		} else {
-			/*
+			
 			double leftInches = ((double) (this.robot.leftDrive.getSelectedSensorPosition()) / this.k_ticks_per_rev)
 					* Math.PI * this.k_wheel_diameter;
 			System.out.println(String.format("%s L-> %s", leftInches, this.m_left_follower.getSegment().position));
-			*/
+			
 			
 			double rightInches = ((double) (this.robot.rightDrive.getSelectedSensorPosition()) / this.k_ticks_per_rev)
 					* Math.PI * this.k_wheel_diameter;
 			System.out.println(String.format("%s R-> %s", rightInches, this.m_right_follower.getSegment().position));
+
+			System.out.println("");
 			
 
 			// Remember, this needs to be inverted
-			double left_speed = m_left_follower.calculate(this.robot.leftDrive.getSelectedSensorPosition());
-			double right_speed = m_right_follower.calculate(this.robot.rightDrive.getSelectedSensorPosition());
+			double left_speed = this.m_left_follower.calculate(this.robot.leftDrive.getSelectedSensorPosition());
+			double right_speed = this.m_right_follower.calculate(this.robot.rightDrive.getSelectedSensorPosition());
+			double heading = this.robot.navX.getFusedHeading() - 180;
+			double desired_heading = Pathfinder.r2d(this.m_left_follower.getHeading());
+			double heading_difference = Pathfinder.boundHalfDegrees(desired_heading - heading);
+			double turn = 0.8d * (1.0d/80.0d) * heading_difference;
 			this.robot.leftDrive.setPower(left_speed);
 			this.robot.rightDrive.setPower(right_speed);
 		}

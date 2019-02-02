@@ -2,7 +2,9 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 
 public class RobotMap {
@@ -18,6 +20,8 @@ public class RobotMap {
 
     // Also setup the controllers for the drivers
     public XboxController gamepad1 = new XboxController(0), gamepad2 = new XboxController(1);
+
+    public AHRS navX;
 
     public RobotMap() {
 
@@ -42,6 +46,9 @@ public class RobotMap {
         // Invert the encoders
         this.leftDrive.setSensorPhase(true);
         this.rightDrive.setSensorPhase(true);
+
+        // Setup the navX
+        this.navX = new AHRS(SPI.Port.kMXP);
 
     }
 

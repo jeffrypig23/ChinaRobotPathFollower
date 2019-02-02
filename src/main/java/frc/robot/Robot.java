@@ -71,6 +71,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 		SmartDashboard.putNumber("Left drive power", this.robot.leftDrive.getMotorOutputPercent());
 		SmartDashboard.putNumber("Right drive power", this.robot.rightDrive.getMotorOutputPercent());
 
+		SmartDashboard.putNumber("Heading", this.robot.navX.getFusedHeading());
 	}
 
 	@Override
