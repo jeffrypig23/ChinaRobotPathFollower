@@ -19,8 +19,8 @@ public class PathFollower {
 
 	// FIXME
 	private final int k_ticks_per_rev = 1240;
-	private final double k_wheel_diameter = 4;
-	private final double k_max_velocity = 203.7383177570093d;
+	private final double k_wheel_diameter = 4.0d;
+	private final double k_max_velocity = 204.0d;
 
 	private EncoderFollower m_left_follower;
 	private EncoderFollower m_right_follower;

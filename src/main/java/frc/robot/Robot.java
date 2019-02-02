@@ -91,7 +91,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				// Do nothing
 				break;
 			case PATH:
-				this.follower = new PathFollower("Test", this.robot);
+				this.follower = new PathFollower("one", this.robot);
 				this.follower.initPathFollower();
 				break;
 			case OTHER:
