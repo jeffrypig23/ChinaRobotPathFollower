@@ -92,8 +92,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				// Do nothing
 				break;
 			case PATH:
-				this.follower = new PathFollower("one", this.robot);
-				this.follower.initPathFollower(true);
+				this.follower = new PathFollower(this.robot);
+				this.stage = 0;
 				break;
 			case OTHER:
 				// Do nothing
@@ -126,6 +126,48 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 				this.pidAuto();
 				break;
 			case PATH:
+				switch (stage) {
+				case 0:
+					// Go the the frst path (one), then wait for completion
+					this.robot.leftDrive.zeroEncoder();
+					this.robot.rightDrive.zeroEncoder();
+					this.follower.initPathFollower("one", true);
+					stage++;
+					break;
+				case 1:
+					// Check if the stage has completed, then start the next one
+					if (this.follower.pathFinished) {
+						this.robot.leftDrive.zeroEncoder();
+						this.robot.rightDrive.zeroEncoder();
+						this.follower.initPathFollower("two", false);
+						stage++;
+					}
+					break;
+				case 2:
+					// Check if the stage has completed, then start the next one
+					if (this.follower.pathFinished) {
+						this.robot.leftDrive.zeroEncoder();
+						this.robot.rightDrive.zeroEncoder();
+						this.follower.initPathFollower("one", true);
+						stage++;
+					}
+					break;
+				case 3:
+					// Check if the stage has completed, then start the next one
+					if (this.follower.pathFinished) {
+						this.robot.leftDrive.zeroEncoder();
+						this.robot.rightDrive.zeroEncoder();
+						this.follower.initPathFollower("two", false);
+						stage++;
+					}
+					break;
+				case 4:
+					if (this.follower.pathFinished) {
+						System.out.println("Go to next path");
+						stage++;
+					}
+					break;
+				}
 				break;
 			case OTHER:
 				break;
