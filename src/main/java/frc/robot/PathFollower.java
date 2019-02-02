@@ -47,13 +47,11 @@ public class PathFollower {
 		this.leftFollower = new EncoderFollower(left_trajectory);
 		this.rightFollower = new EncoderFollower(right_trajectory);
 
-		this.leftFollower.configureEncoder(this.robot.leftDrive.getSelectedSensorPosition(), this.k_ticks_per_rev,
-				this.k_wheel_diameter);
+		this.leftFollower.configureEncoder(0, this.k_ticks_per_rev, this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
 		this.leftFollower.configurePIDVA(0.0175, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 
-		this.rightFollower.configureEncoder(this.robot.leftDrive.getSelectedSensorPosition(), this.k_ticks_per_rev,
-				this.k_wheel_diameter);
+		this.rightFollower.configureEncoder(0, this.k_ticks_per_rev, this.k_wheel_diameter);
 		// You must tune the PID values on the following line!
 		this.rightFollower.configurePIDVA(0.0175, 0.0, 0.0, 1 / this.k_max_velocity, 0);
 

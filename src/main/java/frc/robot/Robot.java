@@ -84,6 +84,8 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 						this.robot.leftDrive.stop();
 						this.robot.rightDrive.stop();
 						if (this.paths.size() > 0) {
+							this.robot.leftDrive.zeroEncoder();
+							this.robot.rightDrive.zeroEncoder();
 							String[] path = this.paths.poll();
 							this.follower.loadPath(path[0], Boolean.parseBoolean(path[1]));
 						}
