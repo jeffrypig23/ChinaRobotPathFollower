@@ -24,7 +24,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 	private double initialVelocityPosition = 0.0;
 
 	// Variables for following a set path
-	private PathFollower follower;
+	private PathFollower follower = new PathFollower(this.robot);
 	private Queue<String[]> paths = new LinkedList<>();
 
 	public Robot() {
@@ -106,7 +106,7 @@ public class Robot extends edu.wpi.first.wpilibj.TimedRobot {
 			}
 
 			// Update telemetry
-			this.updateAutonomousTelemetry();
+			//this.updateAutonomousTelemetry();
 
 		} catch (Exception e) {
 			e.printStackTrace();
